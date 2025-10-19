@@ -13,8 +13,8 @@ import {
   ParquetFileInput, ParquetFileOutput, PostgresInput, PostgresOutput, MySQLInput, MySQLOutput, XmlFileInput, XmlFileOutput, DateTimeConverter,
   EnvVariables, EnvFile, Transpose, Unite, Pivot, Annotation, ODBCInput, PdfTablesInput, Summary, LocalFileInput, FlattenJSON,
   DataCleansing, GenerateIDColumn, SqlServerInput, OracleInput, Connection, SnowflakeInput, FormulaRow, InlineInput, S3FileOutput, S3FileInput, 
-  SnowflakeOutput, SqlServerOutput, OracleOutput, CustomInput, CustomOutput, FileUtils, FrequencyAnalysis, FormExample,UniqueKeyDetector,FileAction,DataframeList,DataframeDelete,HierarchyPath, JSONTools,
-  DatabaseInput, DatabaseOutput
+  SnowflakeOutput, SqlServerOutput, OracleOutput, CustomInput, CustomOutput, FileUtils, FrequencyAnalysis, FormExample,UniqueKeyDetector,FileAction,DataframeList,DataframeDelete,HierarchyPath,PackagesList, JSONTools,
+  DatabaseInput, DatabaseOutput, CompareDataframes
 } from './components';
 
 // Export allow the component to be used as a base component in different packages
@@ -23,7 +23,7 @@ export { Aggregate, Console, ExcelFileOutput, CsvFileInput, JsonFileInput, JsonF
   ParquetFileInput, ParquetFileOutput, PostgresInput, PostgresOutput, MySQLInput, MySQLOutput, XmlFileInput, XmlFileOutput, DateTimeConverter,
   EnvVariables, EnvFile, Transpose, Unite, Pivot, Annotation, ODBCInput, PdfTablesInput, Summary, LocalFileInput, FlattenJSON,
   DataCleansing, GenerateIDColumn, SqlServerInput, OracleInput, Connection, SnowflakeInput, FormulaRow, InlineInput, S3FileOutput, S3FileInput,
-  SnowflakeOutput, SqlServerOutput, OracleOutput, CustomInput, CustomOutput, FileUtils, FrequencyAnalysis, FormExample,UniqueKeyDetector,FileAction,DataframeList,DataframeDelete,HierarchyPath }
+  SnowflakeOutput, SqlServerOutput, OracleOutput, CustomInput, CustomOutput, FileUtils, FrequencyAnalysis, FormExample,UniqueKeyDetector,FileAction,DataframeList,DataframeDelete,HierarchyPath,PackagesList,CompareDataframes }
 
 const plugin: JupyterFrontEndPlugin<void> = {
   id: '@amphi/pipeline-components-core',
@@ -82,6 +82,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     componentService.addComponent(GenerateIDColumn.getInstance());
     componentService.addComponent(JSONTools.getInstance());
     componentService.addComponent(HierarchyPath.getInstance());
+	componentService.addComponent(CompareDataframes.getInstance());
 
     // Outputs
     componentService.addComponent(CsvFileOutput.getInstance())
@@ -116,6 +117,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     componentService.addComponent(FormExample.getInstance())
     componentService.addComponent(DataframeList.getInstance())
     componentService.addComponent(DataframeDelete.getInstance())
+	componentService.addComponent(PackagesList.getInstance())
   }
 };
 
