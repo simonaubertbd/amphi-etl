@@ -92,3 +92,21 @@ You must see the changes
 On the interface, explain the change.
 
 10. If your change is approved, you will receive a notification. 
+
+
+## 👷 Advanced usage with branch 👷
+
+A branch is a parallel instance of your code. It's pretty useful when you want to work on several topic in the same time (or at least without waiting for the first one to be committed before working on the second topic).
+
+Most of the magic happens between the steps 3 and 4.
+
+3.1. Once you have forked amphi on your account, click on the "Branch" button in the code tab. Then click on "New branch" button and give it an explicit name. It's a good idea to have a naming convention.
+
+4.1. On your machine, in cmd, go to the repository where you want to clone it like
+```bash
+cd C:\Users\{yourusername}\amphi_dev\{your_branch}
+```
+4.2. The cloning is almost the same
+```bash
+git clone --branch "{your_branch]" https://github.com/{your_github_username}/amphi-etl.git
+```
