@@ -167,11 +167,16 @@ Editor components styles
   padding-bottom: 8px;
 }
 
+.component.component--header-inline::before {
+  height: 2px;
+}
+
 .component.component--header-inline .component__header {
   border-bottom: none;
   min-height: 0;
   flex-wrap: nowrap;
   width: 100%;
+  align-items: center;
 }
 
 .component.component--header-inline .component__body {
@@ -184,6 +189,24 @@ Editor components styles
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.component.component--header-inline .component__icon--inline,
+.component.component--header-inline .deletebutton--inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  flex: 0 0 auto;
+  line-height: 1;
+}
+
+.component.component--header-inline .deletebutton--inline svg,
+.component.component--header-inline .component__icon--inline svg {
+  display: block;
 }
 
 .component.component--header-inline .component__title--inline .ant-typography-edit-content,
@@ -203,24 +226,38 @@ Editor components styles
 .component.component--header-inline .handle-right {
   top: 50%;
   transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #aeb7c2;
+  box-sizing: border-box;
 }
 
 .component.component--header-inline .handle-left {
   top: 50%;
   transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #aeb7c2;
+  box-sizing: border-box;
+}
+
+.component.component--header-inline .handle-left--dual {
+  top: calc(50% - 6px);
 }
 
 .component.component--header-inline .second-handle-left {
-  top: calc(50% + 2px);
-  width: 10px;
-  height: 10px;
+  top: calc(50% + 6px);
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
+  background-color: #ffffff;
+  border: 1px solid #aeb7c2;
+  box-sizing: border-box;
 }
 
 .component__header--default {

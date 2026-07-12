@@ -149,11 +149,7 @@ export class PipelineService {
       .map(pkgName => {
         if (pkgName.includes('[')) {
           // Direct pip install for packages with extras (e.g., `ibis-framework[snowflake]`). why?
-          return `
-print('installing ${pkgName} with pip')
-!pip install ${pkgName} -q -q
-print('${pkgName} is now installed')
-`;
+          return `!pip install ${pkgName} -q -q`;
         } else {
           // Standard check for regular packages
           return `
@@ -161,9 +157,7 @@ try:
     __import__("${pkgName}")
     print('${pkgName} is already installed')
 except ImportError:
-    print('installing ${pkgName} with pip')
-    !pip install ${pkgName} -q -q
-    print('${pkgName} is now installed')`;
+    !pip install ${pkgName} -q -q`;
         }
       });
   }

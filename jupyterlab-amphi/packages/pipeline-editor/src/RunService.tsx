@@ -109,16 +109,23 @@ export class RunService {
   
     static extractDependencies(code: string): string[] {
       const lines = code.split(/\r?\n/);
-      const dependencyLine = lines[2];
-      const dependencies = dependencyLine.startsWith(
-        '# Additional dependencies: '
-      )
-        ? dependencyLine
-            .split(': ')[1]
-            .split(',')
-            .map(pkg => pkg.trim())
-        : [];
-      return dependencies;
+      const dependencyLine = lines.find(line =>
+        line.startsWith('# Additional dependencies: ')
+      );
+
+      if (!dependencyLine) {
+        return [];
+      }
+
+      const dependencyList = dependencyLine.split(': ')[1]?.trim() ?? '';
+      if (!dependencyList) {
+        return [];
+      }
+
+      return dependencyList
+        .split(',')
+        .map(pkg => pkg.trim())
+        .filter(Boolean);
     }
 
     static async executeMultipleKernelCodesWithNotifications(

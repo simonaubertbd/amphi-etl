@@ -5,13 +5,13 @@ export class ChartGenerator extends BaseCoreComponent {
   constructor() {
     const description = 'Generate a Chart';
     const defaultConfig = {
-        tsCFselectFigureType:"",
+        tsCFselectFigureType:"bar",
         //py_arg_X: str = None,
         //py_arg_Slice: str = None, #pie chart
         //tsCFY: str = None,
-        tsCFkeyvalueColumnsSelectAggregation:"", //dict to define,
+        tsCFkeyvalueColumnsSelectAggregation:[], //dict to define,
         tsCFcolumnGroupby:"",
-        tsCFradioSort:"Asc", //maybe not on scatter
+        tsCFradioSort:"",
         tsCFselectSortAggregation:"",
         tsCFcolumnSortColumn:"",
         tsCFselectColor:"",
@@ -190,7 +190,6 @@ export class ChartGenerator extends BaseCoreComponent {
   }
 
 provideFunctions({ config }): string[] {
-    const prefix = config?.backend?.prefix ?? "pd";
     const tsChartFunction = `
 def py_fn_create_figure(
     py_arg_dataframe: pd.DataFrame,
@@ -260,6 +259,61 @@ def py_fn_create_figure(
     
     todo next versions : scatter plot (with optional agg for both axis and a mark)
     """
+
+    if py_arg_dataframe is None:
+        raise ValueError("Chart Generator needs an input dataframe.")
+
+    if not isinstance(py_arg_dataframe, pd.DataFrame):
+        raise ValueError("Chart Generator expects a pandas DataFrame as input.")
+
+    if py_arg_dataframe.empty:
+        raise ValueError("Chart Generator cannot build a chart from an empty dataframe.")
+
+    py_arg_figure_type = py_arg_figure_type or 'bar'
+    py_arg_sort = py_arg_sort or 'None'
+    py_arg_color = py_arg_color or 'blue'
+    py_arg_aggregation = dict(py_arg_aggregation or {})
+
+    def _py_fn_first_matching_column(
+        include_numeric: bool = False,
+        include_non_numeric: bool = False,
+        exclude: List[str] = None,
+    ) -> str:
+        excluded = set(exclude or [])
+        for col in py_arg_dataframe.columns:
+            if col in excluded:
+                continue
+            is_numeric = pd.api.types.is_numeric_dtype(py_arg_dataframe[col])
+            if include_numeric and is_numeric:
+                return col
+            if include_non_numeric and not is_numeric:
+                return col
+        return None
+
+    if py_arg_groupby is None:
+        py_arg_groupby = _py_fn_first_matching_column(include_non_numeric=True)
+        if py_arg_groupby is None and py_arg_figure_type in ['bar', 'barh', 'line', 'pie']:
+            py_arg_groupby = _py_fn_first_matching_column(include_numeric=True)
+
+    if not py_arg_aggregation:
+        default_value_column = _py_fn_first_matching_column(
+            include_numeric=True,
+            exclude=[py_arg_groupby] if py_arg_groupby is not None else None,
+        )
+        if default_value_column is not None:
+            py_arg_aggregation = {default_value_column: 'sum'}
+
+    if py_arg_figure_type in ['bar', 'barh', 'line', 'pie']:
+        if py_arg_groupby is None:
+            raise ValueError(
+                "Chart Generator could not find a column to use as labels. "
+                "Choose a 'Group by' column or provide at least one column in the input dataframe."
+            )
+        if not py_arg_aggregation:
+            raise ValueError(
+                "Chart Generator could not find a numeric column to aggregate. "
+                "Add a numeric column or configure an aggregation manually."
+            )
 
     def _py_fn_create_intermediary_dataframe(
         _py_arg_dataframe: pd.DataFrame,
@@ -401,6 +455,17 @@ def py_fn_create_figure(
     py_const_aggregation_col, py_const_aggregation_agg = next(iter(py_arg_aggregation.items()))
     py_const_aggregation_label = f"{py_const_aggregation_agg.capitalize()} of {py_const_aggregation_col}"
 
+    if py_const_aggregation_label not in py_df_intermediary_dataframe.columns:
+        raise ValueError(
+            f"Chart Generator could not create the aggregated series '{py_const_aggregation_label}'. "
+            "Please review the selected aggregation settings."
+        )
+
+    if py_arg_groupby is not None and py_arg_groupby not in py_df_intermediary_dataframe.columns:
+        raise ValueError(
+            f"Chart Generator could not find the group-by column '{py_arg_groupby}' after aggregation."
+        )
+
     # Create the figure
     fig, ax = plt.subplots(figsize=py_arg_size)
 
@@ -424,7 +489,7 @@ def py_fn_create_figure(
         color_column = None
 
     # Sort the DataFrame if specified
-    if py_arg_sort != 'None':
+    if py_arg_sort != 'None' and sort_column is not None:
         ascending = py_arg_sort == 'Asc'
         py_df_intermediary_dataframe = py_df_intermediary_dataframe.sort_values(by=sort_column, ascending=ascending)
 
@@ -568,6 +633,12 @@ def py_fn_create_figure(
         if py_arg_legend:
             ax.legend()
 
+    else:
+        raise ValueError(
+            f"Chart Generator does not support the figure type '{py_arg_figure_type}'. "
+            "Choose one of: bar, barh, line, pie."
+        )
+
     # Return the figure
     return fig
 	    `;
@@ -575,12 +646,12 @@ def py_fn_create_figure(
   }
   generateComponentCode({ config, inputName, outputName }) {
 		
-	let tsConstFigureType = 'None';
+	let tsConstFigureType = '"bar"';
     if (config.tsCFselectFigureType && config.tsCFselectFigureType.trim() !== '' 
 	) {
       tsConstFigureType = '"' + config.tsCFselectFigureType+ '"';
     }
-	let tsConstColor = 'None';
+	let tsConstColor = '"blue"';
     if (config.tsCFselectColor && config.tsCFselectColor.trim() !== '' 
 	) {
       tsConstColor = '"' + config.tsCFselectColor+ '"';
@@ -628,21 +699,19 @@ def py_fn_create_figure(
     }
 		
 	// Start constructing the aggregation arguments dynamically. Target : {'Age': 'mean'}
-    let tsConstAggregation = "";
+    let tsConstAggregation = "None";
 
     if (config.tsCFkeyvalueColumnsSelectAggregation && config.tsCFkeyvalueColumnsSelectAggregation.length > 0) {
-      config.tsCFkeyvalueColumnsSelectAggregation.forEach((op, index) => {
+      const tsAggregationEntries: string[] = [];
+      config.tsCFkeyvalueColumnsSelectAggregation.forEach((op) => {
         // Determine how to reference the column based on 'named'
         const tsConstcolumnReference = op.key.named ? `'${op.key.value}'` : op.key.value;
         const tsConstoperation = op.value.value;
-        const tsConstcolumnName = op.key.named ? op.key.value : `col${op.key.value}`;
 		
         // Construct each aggregation argument
-        tsConstAggregation += `{${tsConstcolumnReference}: '${tsConstoperation}'}`;
-        if (index < config.tsCFkeyvalueColumnsSelectAggregation.length - 1) {
-          tsConstAggregation += ", ";
-        }
+        tsAggregationEntries.push(`${tsConstcolumnReference}: '${tsConstoperation}'`);
       });
+      tsConstAggregation = `{${tsAggregationEntries.join(", ")}}`;
     }
 	
     return `
@@ -680,4 +749,3 @@ ${outputName}=py_fn_create_figure(
 `.trim();
   }
 }
-

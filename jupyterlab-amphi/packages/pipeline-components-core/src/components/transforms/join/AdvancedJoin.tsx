@@ -62,7 +62,7 @@ export class AdvancedJoin extends BaseCoreComponent {
                 ,
                 {
                     type: "select",
-                    label: "Strategy for same names",
+                    label: "Strategy for similar names",
                     id: "tsCFselectSameNameStrategy",
                     columnId: 1,
                     options: [

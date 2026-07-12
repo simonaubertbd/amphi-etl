@@ -98,7 +98,7 @@ export const renderHandle: React.FC<IHandleProps> = ({ type, Handle, Position, i
     case "pandas_df_double_processor":
       return (
         <>
-          <LimitedInputHandle type="target" position={Position.Left} isConnectable={1} className="handle-left" id="in1" />
+          <LimitedInputHandle type="target" position={Position.Left} isConnectable={1} className="handle-left handle-left--dual" id="in1" />
           <LimitedInputHandle type="target" position={Position.Left} isConnectable={1} className="second-handle-left" id="in2" />
           <Handle
             className="handle-right"
@@ -258,11 +258,13 @@ const MemoizedComponentUI = React.memo(
         <ConfigProvider theme={theme}>
           <div className={componentClassName} onDoubleClick={handleDoubleClick}>
             <div className="component__header component__header--inline" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Icon.react
-                height="20px"
-                width="20px"
-                color={colorPrimary}
-              />
+              <div className="component__icon--inline">
+                <Icon.react
+                  height="20px"
+                  width="20px"
+                  color={colorPrimary}
+                />
+              </div>
               <Text
                 onDoubleClick={stopPropagation}
                 onDragStart={disableDrag}
@@ -278,7 +280,7 @@ const MemoizedComponentUI = React.memo(
                 onConfirm={deleteNode}
                 icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
               >
-                <div className="deletebutton">
+                <div className="deletebutton deletebutton--inline">
                   <xIcon.react className="group-hover:text-primary" />
                 </div>
               </Popconfirm>

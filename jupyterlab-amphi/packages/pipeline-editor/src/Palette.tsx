@@ -204,7 +204,7 @@ const ComponentPalette: React.FC<ComponentPaletteProps> = ({
           overflowX: 'auto',  // Enable horizontal scroll
           overflowY: 'hidden',
           alignItems: 'center',
-          padding: '10px 4px 10px 4px', // Padding around the cards
+          padding: '10px 16px 10px 16px', // Add stronger side inset so first/last cards align visually with the search controls
           width: '100%',
           scrollbarWidth: 'thin', // Firefox
         }}

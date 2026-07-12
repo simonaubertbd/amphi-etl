@@ -57,11 +57,10 @@ export class CreateJSONfromTable extends BaseCoreComponent {
   }
 
 provideFunctions({ config }): string[] {
-    const prefix = config?.backend?.prefix ?? "pd";
     const tsCreateJSONfromTableFunction = `
 def py_fn_create_json_from_dataframe(
     py_arg_dataframe: pd.DataFrame,
-    py_arg_json_columns: List[str],
+    py_arg_json_columns: Optional[List[str]],
     py_arg_key_columns: Optional[List[str]] = None,
     py_arg_output_json_column_name: str = "json_payload",
     py_arg_return_object_when_possible: bool = False
@@ -80,8 +79,8 @@ def py_fn_create_json_from_dataframe(
     Args:
         py_arg_dataframe (pd.DataFrame):
             Input dataframe.
-        py_arg_json_columns (List[str]):
-            Columns to include in JSON payload.
+        py_arg_json_columns (Optional[List[str]]):
+            Columns to include in JSON payload. If None or empty, all columns are used.
         py_arg_key_columns (Optional[List[str]]):
             Columns used for grouping. If None or empty, no grouping is applied.
         py_arg_output_json_column_name (str):
@@ -93,10 +92,31 @@ def py_fn_create_json_from_dataframe(
         pd.DataFrame:
             Dataframe containing key columns (if any) + JSON payload column as pandas string dtype.
     """
-    py_var_key_columns = py_arg_key_columns if py_arg_key_columns else []
+    if py_arg_dataframe is None:
+        raise ValueError("Create JSON from Table needs an input dataframe.")
+
+    if not isinstance(py_arg_dataframe, pd.DataFrame):
+        raise ValueError("Create JSON from Table expects a pandas DataFrame as input.")
+
+    if py_arg_dataframe.empty:
+        raise ValueError("Create JSON from Table cannot build JSON from an empty dataframe.")
+
+    if len(py_arg_dataframe.columns) == 0:
+        raise ValueError(
+            "Create JSON from Table could not find any columns to serialize. "
+            "Provide a dataframe with at least one column."
+        )
+
+    py_var_json_columns = list(py_arg_json_columns or py_arg_dataframe.columns.tolist())
+    py_var_key_columns = list(py_arg_key_columns or [])
+
+    if len(py_var_json_columns) == 0:
+        raise ValueError(
+            "Create JSON from Table could not find any columns to include in the JSON payload."
+        )
 
     py_var_missing_json_columns = [
-        py_var_col for py_var_col in py_arg_json_columns if py_var_col not in py_arg_dataframe.columns
+        py_var_col for py_var_col in py_var_json_columns if py_var_col not in py_arg_dataframe.columns
     ]
     if py_var_missing_json_columns:
         raise ValueError(
@@ -121,7 +141,7 @@ def py_fn_create_json_from_dataframe(
 
     # No group by -> one output row
     if len(py_var_key_columns) == 0:
-        py_var_records = py_arg_dataframe[py_arg_json_columns].to_dict(orient="records")
+        py_var_records = py_arg_dataframe[py_var_json_columns].to_dict(orient="records")
         py_var_json = py_fn_serialize_payload(py_var_records)
         py_df_output = pd.DataFrame({py_arg_output_json_column_name: [py_var_json]})
         py_df_output[py_arg_output_json_column_name] = py_df_output[
@@ -132,7 +152,7 @@ def py_fn_create_json_from_dataframe(
     # Group by -> one output row per group
     py_df_output = (
         py_arg_dataframe
-        .groupby(py_var_key_columns, dropna=False)[py_arg_json_columns]
+        .groupby(py_var_key_columns, dropna=False)[py_var_json_columns]
         .apply(
             lambda py_arg_group: py_fn_serialize_payload(
                 py_arg_group.to_dict(orient="records")
